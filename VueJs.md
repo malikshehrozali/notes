@@ -1181,4 +1181,2059 @@ defineProps({
     <template #default="{ item, index }">
       <strong>{{ index }}:</strong> {{ item.name }}
     </template>
-  </List
+  </List>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const users = ref([
+  { id: 1, name: 'John' },
+  { id: 2, name: 'Jane' }
+]);
+</script>
+```
+
+### Default Slot Content
+
+```vue
+<!-- Button.vue -->
+<template>
+  <button class="custom-btn">
+    <slot>Default Button Text</slot>
+  </button>
+</template>
+```
+
+If no content is provided, "Default Button Text" will appear.
+
+---
+
+## 17. Lifecycle Hooks
+
+Lifecycle hooks let you run code at specific stages of a component's life.
+
+### Common Lifecycle Hooks
+
+```vue
+<script setup>
+import { 
+  onBeforeMount,
+  onMounted,
+  onBeforeUpdate,
+  onUpdated,
+  onBeforeUnmount,
+  onUnmounted
+} from 'vue';
+
+// Before component is mounted to DOM
+onBeforeMount(() => {
+  console.log('Before Mount');
+});
+
+// After component is mounted (most common)
+onMounted(() => {
+  console.log('Component Mounted!');
+  // Good for: API calls, DOM manipulation, timers
+});
+
+// Before component updates
+onBeforeUpdate(() => {
+  console.log('Before Update');
+});
+
+// After component updates
+onUpdated(() => {
+  console.log('Component Updated!');
+});
+
+// Before component is destroyed
+onBeforeUnmount(() => {
+  console.log('Before Unmount');
+  // Good for: cleanup
+});
+
+// After component is destroyed
+onUnmounted(() => {
+  console.log('Component Unmounted!');
+  // Good for: cleanup, removing event listeners
+});
+</script>
+```
+
+### Practical Example - Fetching Data
+
+```vue
+<template>
+  <div>
+    <h2>Users</h2>
+    <p v-if="loading">Loading...</p>
+    <ul v-else>
+      <li v-for="user in users" :key="user.id">
+        {{ user.name }}
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
+
+const users = ref([]);
+const loading = ref(true);
+let timer = null;
+
+onMounted(async () => {
+  console.log('Component mounted, fetching data...');
+  
+  // Simulate API call
+  setTimeout(() => {
+    users.value = [
+      { id: 1, name: 'John' },
+      { id: 2, name: 'Jane' }
+    ];
+    loading.value = false;
+  }, 1000);
+  
+  // Set up a timer
+  timer = setInterval(() => {
+    console.log('Timer running...');
+  }, 1000);
+});
+
+onUnmounted(() => {
+  console.log('Cleaning up...');
+  // Clear timer when component is destroyed
+  if (timer) {
+    clearInterval(timer);
+  }
+});
+</script>
+```
+
+### Lifecycle Hook Diagram
+
+```
+Creation Phase:
+  setup() → onBeforeMount() → onMounted()
+
+Update Phase:
+  onBeforeUpdate() → onUpdated()
+
+Destruction Phase:
+  onBeforeUnmount() → onUnmounted()
+```
+
+---
+
+## 18. Composition API vs Options API
+
+Vue 3 supports both APIs. Composition API is newer and recommended.
+
+### Options API (Vue 2 Style)
+
+```vue
+<template>
+  <div>
+    <p>Count: {{ count }}</p>
+    <p>Double: {{ doubleCount }}</p>
+    <button @click="increment">Increment</button>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      count: 0
+    };
+  },
+  
+  computed: {
+    doubleCount() {
+      return this.count * 2;
+    }
+  },
+  
+  methods: {
+    increment() {
+      this.count++;
+    }
+  },
+  
+  mounted() {
+    console.log('Component mounted');
+  }
+};
+</script>
+```
+
+### Composition API (Vue 3 Style - Recommended)
+
+```vue
+<template>
+  <div>
+    <p>Count: {{ count }}</p>
+    <p>Double: {{ doubleCount }}</p>
+    <button @click="increment">Increment</button>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+
+const count = ref(0);
+
+const doubleCount = computed(() => count.value * 2);
+
+function increment() {
+  count.value++;
+}
+
+onMounted(() => {
+  console.log('Component mounted');
+});
+</script>
+```
+
+### Why Composition API?
+
+✅ **Better code organization** - Group related logic together  
+✅ **Reusable logic** - Easy to extract and share via composables  
+✅ **Better TypeScript support**  
+✅ **No `this` keyword** - Less confusion  
+✅ **Tree-shaking friendly** - Smaller bundle size
+
+### Creating Reusable Logic (Composables)
+
+```js
+// composables/useCounter.js
+import { ref, computed } from 'vue';
+
+export function useCounter(initialValue = 0) {
+  const count = ref(initialValue);
+  
+  const doubleCount = computed(() => count.value * 2);
+  
+  function increment() {
+    count.value++;
+  }
+  
+  function decrement() {
+    count.value--;
+  }
+  
+  return {
+    count,
+    doubleCount,
+    increment,
+    decrement
+  };
+}
+```
+
+**Using the Composable:**
+
+```vue
+<template>
+  <div>
+    <p>Count: {{ count }}</p>
+    <p>Double: {{ doubleCount }}</p>
+    <button @click="increment">+</button>
+    <button @click="decrement">-</button>
+  </div>
+</template>
+
+<script setup>
+import { useCounter } from './composables/useCounter.js';
+
+const { count, doubleCount, increment, decrement } = useCounter(10);
+</script>
+```
+
+---
+
+## 19. Vue Router - Navigation
+
+Vue Router enables navigation between different pages/views in your app.
+
+### Installation
+
+```bash
+npm install vue-router@4
+```
+
+### Basic Setup
+
+**1. Create router configuration:**
+
+```js
+// router/index.js
+import { createRouter, createWebHistory } from 'vue-router';
+import Home from '../views/Home.vue';
+import About from '../views/About.vue';
+import Contact from '../views/Contact.vue';
+
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: About
+  },
+  {
+    path: '/contact',
+    name: 'Contact',
+    component: Contact
+  },
+  {
+    path: '/user/:id',
+    name: 'User',
+    component: () => import('../views/User.vue') // Lazy loading
+  }
+];
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+});
+
+export default router;
+```
+
+**2. Register router in main.js:**
+
+```js
+// main.js
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
+
+const app = createApp(App);
+app.use(router);
+app.mount('#app');
+```
+
+**3. Use router-view in App.vue:**
+
+```vue
+<!-- App.vue -->
+<template>
+  <div id="app">
+    <nav>
+      <router-link to="/">Home</router-link>
+      <router-link to="/about">About</router-link>
+      <router-link to="/contact">Contact</router-link>
+    </nav>
+    
+    <router-view></router-view>
+  </div>
+</template>
+
+<style>
+nav {
+  padding: 20px;
+  background: #f0f0f0;
+}
+
+nav a {
+  margin-right: 10px;
+  text-decoration: none;
+  color: #42b983;
+}
+
+nav a.router-link-active {
+  font-weight: bold;
+}
+</style>
+```
+
+### Navigation Methods
+
+```vue
+<template>
+  <div>
+    <!-- Declarative navigation -->
+    <router-link to="/about">About</router-link>
+    <router-link :to="{ name: 'User', params: { id: 123 } }">
+      User 123
+    </router-link>
+    
+    <!-- Programmatic navigation -->
+    <button @click="goToAbout">Go to About</button>
+    <button @click="goBack">Go Back</button>
+  </div>
+</template>
+
+<script setup>
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+function goToAbout() {
+  router.push('/about');
+  // Or: router.push({ name: 'About' });
+}
+
+function goBack() {
+  router.back();
+}
+</script>
+```
+
+### Route Parameters
+
+```vue
+<!-- User.vue -->
+<template>
+  <div>
+    <h2>User Profile</h2>
+    <p>User ID: {{ userId }}</p>
+  </div>
+</template>
+
+<script setup>
+import { useRoute } from 'vue-router';
+import { computed } from 'vue';
+
+const route = useRoute();
+
+// Access route params
+const userId = computed(() => route.params.id);
+
+// Access query parameters
+// Example: /user/123?tab=profile
+const tab = computed(() => route.query.tab);
+</script>
+```
+
+### Navigation Guards
+
+```js
+// router/index.js
+const router = createRouter({
+  // ... routes
+});
+
+// Global before guard
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = false; // Check auth status
+  
+  if (to.name !== 'Login' && !isAuthenticated) {
+    next({ name: 'Login' });
+  } else {
+    next();
+  }
+});
+
+export default router;
+```
+
+### Nested Routes
+
+```js
+const routes = [
+  {
+    path: '/dashboard',
+    component: Dashboard,
+    children: [
+      {
+        path: 'profile',
+        component: Profile
+      },
+      {
+        path: 'settings',
+        component: Settings
+      }
+    ]
+  }
+];
+```
+
+**Vue Router Documentation:** https://router.vuejs.org
+
+---
+
+## 20. Pinia - State Management
+
+Pinia is the official state management library for Vue 3.
+
+### Installation
+
+```bash
+npm install pinia
+```
+
+### Setup
+
+```js
+// main.js
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
+
+const app = createApp(App);
+const pinia = createPinia();
+
+app.use(pinia);
+app.mount('#app');
+```
+
+### Creating a Store
+
+```js
+// stores/counter.js
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+
+export const useCounterStore = defineStore('counter', () => {
+  // State
+  const count = ref(0);
+  
+  // Getters (computed)
+  const doubleCount = computed(() => count.value * 2);
+  
+  // Actions (methods)
+  function increment() {
+    count.value++;
+  }
+  
+  function decrement() {
+    count.value--;
+  }
+  
+  function incrementBy(amount) {
+    count.value += amount;
+  }
+  
+  return {
+    count,
+    doubleCount,
+    increment,
+    decrement,
+    incrementBy
+  };
+});
+```
+
+### Using Store in Components
+
+```vue
+<template>
+  <div>
+    <h2>Counter Store Demo</h2>
+    <p>Count: {{ counter.count }}</p>
+    <p>Double: {{ counter.doubleCount }}</p>
+    
+    <button @click="counter.increment">+</button>
+    <button @click="counter.decrement">-</button>
+    <button @click="counter.incrementBy(5)">+5</button>
+  </div>
+</template>
+
+<script setup>
+import { useCounterStore } from '@/stores/counter';
+
+const counter = useCounterStore();
+</script>
+```
+
+### User Store Example
+
+```js
+// stores/user.js
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+
+export const useUserStore = defineStore('user', () => {
+  // State
+  const user = ref(null);
+  const isLoading = ref(false);
+  
+  // Getters
+  const isLoggedIn = computed(() => user.value !== null);
+  const userName = computed(() => user.value?.name || 'Guest');
+  
+  // Actions
+  async function login(email, password) {
+    isLoading.value = true;
+    
+    try {
+      // Simulate API call
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await response.json();
+      user.value = data.user;
+      
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  
+  function logout() {
+    user.value = null;
+  }
+  
+  return {
+    user,
+    isLoading,
+    isLoggedIn,
+    userName,
+    login,
+    logout
+  };
+});
+```
+
+### Using Multiple Stores
+
+```vue
+<template>
+  <div>
+    <p>Count: {{ counter.count }}</p>
+    <p>User: {{ user.userName }}</p>
+    <p>Logged In: {{ user.isLoggedIn }}</p>
+  </div>
+</template>
+
+<script setup>
+import { useCounterStore } from '@/stores/counter';
+import { useUserStore } from '@/stores/user';
+
+const counter = useCounterStore();
+const user = useUserStore();
+</script>
+```
+
+### Store with Options API Style
+
+```js
+// stores/todo.js
+import { defineStore } from 'pinia';
+
+export const useTodoStore = defineStore('todo', {
+  state: () => ({
+    todos: [],
+    filter: 'all'
+  }),
+  
+  getters: {
+    completedTodos: (state) => {
+      return state.todos.filter(todo => todo.completed);
+    },
+    
+    activeTodos: (state) => {
+      return state.todos.filter(todo => !todo.completed);
+    }
+  },
+  
+  actions: {
+    addTodo(text) {
+      this.todos.push({
+        id: Date.now(),
+        text,
+        completed: false
+      });
+    },
+    
+    removeTodo(id) {
+      this.todos = this.todos.filter(todo => todo.id !== id);
+    },
+    
+    toggleTodo(id) {
+      const todo = this.todos.find(todo => todo.id === id);
+      if (todo) {
+        todo.completed = !todo.completed;
+      }
+    }
+  }
+});
+```
+
+**Pinia Documentation:** https://pinia.vuejs.org
+
+---
+
+## 21. HTTP Requests with Axios
+
+Axios is a popular HTTP client for making API requests.
+
+### Installation
+
+```bash
+npm install axios
+```
+
+### Basic GET Request
+
+```vue
+<template>
+  <div>
+    <h2>Users</h2>
+    
+    <p v-if="loading">Loading...</p>
+    <p v-else-if="error">Error: {{ error }}</p>
+    
+    <ul v-else>
+      <li v-for="user in users" :key="user.id">
+        {{ user.name }} - {{ user.email }}
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+
+const users = ref([]);
+const loading = ref(false);
+const error = ref(null);
+
+async function fetchUsers() {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    const response = await axios.get('https://jsonplaceholder.typicode.com/users');
+    users.value = response.data;
+  } catch (err) {
+    error.value = err.message;
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchUsers();
+});
+</script>
+```
+
+### POST Request
+
+```vue
+<template>
+  <div>
+    <h2>Create Post</h2>
+    
+    <input v-model="title" placeholder="Title">
+    <textarea v-model="body" placeholder="Body"></textarea>
+    <button @click="createPost" :disabled="loading">
+      {{ loading ? 'Creating...' : 'Create Post' }}
+    </button>
+    
+    <div v-if="successMessage">{{ successMessage }}</div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import axios from 'axios';
+
+const title = ref('');
+const body = ref('');
+const loading = ref(false);
+const successMessage = ref('');
+
+async function createPost() {
+  loading.value = true;
+  successMessage.value = '';
+  
+  try {
+    const response = await axios.post('https://jsonplaceholder.typicode.com/posts', {
+      title: title.value,
+      body: body.value,
+      userId: 1
+    });
+    
+    console.log('Created:', response.data);
+    successMessage.value = 'Post created successfully!';
+    
+    // Clear form
+    title.value = '';
+    body.value = '';
+  } catch (err) {
+    console.error('Error:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+```
+
+### PUT/PATCH Request (Update)
+
+```vue
+<script setup>
+import axios from 'axios';
+
+async function updateUser(userId, data) {
+  try {
+    const response = await axios.put(`https://api.example.com/users/${userId}`, data);
+    console.log('Updated:', response.data);
+  } catch (err) {
+    console.error('Error updating:', err);
+  }
+}
+
+// Or use PATCH for partial updates
+async function patchUser(userId, data) {
+  try {
+    const response = await axios.patch(`https://api.example.com/users/${userId}`, data);
+    console.log('Patched:', response.data);
+  } catch (err) {
+    console.error('Error patching:', err);
+  }
+}
+</script>
+```
+
+### DELETE Request
+
+```vue
+<script setup>
+import axios from 'axios';
+
+async function deleteUser(userId) {
+  try {
+    await axios.delete(`https://api.example.com/users/${userId}`);
+    console.log('User deleted');
+  } catch (err) {
+    console.error('Error deleting:', err);
+  }
+}
+</script>
+```
+
+### Creating Axios Instance (Recommended)
+
+```js
+// api/axios.js
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://api.example.com',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add request interceptor (for auth tokens, etc.)
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor (for error handling)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized
+      console.log('Unauthorized - redirect to login');
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+```
+
+**Using the custom axios instance:**
+
+```vue
+<script setup>
+import api from '@/api/axios';
+
+async function fetchData() {
+  try {
+    const response = await api.get('/users');
+    console.log(response.data);
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>
+```
+
+### Reusable Composable for API Calls
+
+```js
+// composables/useFetch.js
+import { ref } from 'vue';
+import axios from 'axios';
+
+export function useFetch(url) {
+  const data = ref(null);
+  const error = ref(null);
+  const loading = ref(false);
+  
+  async function fetchData() {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await axios.get(url);
+      data.value = response.data;
+    } catch (err) {
+      error.value = err.message;
+    } finally {
+      loading.value = false;
+    }
+  }
+  
+  return {
+    data,
+    error,
+    loading,
+    fetchData
+  };
+}
+```
+
+**Using the composable:**
+
+```vue
+<script setup>
+import { onMounted } from 'vue';
+import { useFetch } from '@/composables/useFetch';
+
+const { data: users, error, loading, fetchData } = useFetch(
+  'https://jsonplaceholder.typicode.com/users'
+);
+
+onMounted(() => {
+  fetchData();
+});
+</script>
+```
+
+**Axios Documentation:** https://axios-http.com
+
+---
+
+## 22. Custom Directives
+
+Create your own directives for DOM manipulation.
+
+### Basic Custom Directive
+
+```js
+// main.js
+import { createApp } from 'vue';
+import App from './App.vue';
+
+const app = createApp(App);
+
+// Global directive
+app.directive('focus', {
+  mounted(el) {
+    el.focus();
+  }
+});
+
+app.mount('#app');
+```
+
+**Using the directive:**
+
+```vue
+<template>
+  <input v-focus placeholder="Auto-focused">
+</template>
+```
+
+### Directive with Arguments
+
+```js
+// main.js
+app.directive('color', {
+  mounted(el, binding) {
+    el.style.color = binding.value;
+  },
+  updated(el, binding) {
+    el.style.color = binding.value;
+  }
+});
+```
+
+**Usage:**
+
+```vue
+<template>
+  <p v-color="'red'">Red text</p>
+  <p v-color="textColor">Dynamic color</p>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const textColor = ref('blue');
+</script>
+```
+
+### Local Directive (Component-specific)
+
+```vue
+<template>
+  <input v-focus>
+  <p v-highlight="'yellow'">Highlighted text</p>
+</template>
+
+<script setup>
+// Local directives
+const vFocus = {
+  mounted(el) {
+    el.focus();
+  }
+};
+
+const vHighlight = {
+  mounted(el, binding) {
+    el.style.backgroundColor = binding.value;
+  }
+};
+</script>
+```
+
+### Directive Hooks
+
+```js
+app.directive('example', {
+  // Called before element is inserted into DOM
+  created(el, binding, vnode) {
+    console.log('created');
+  },
+  
+  // Called before parent component is mounted
+  beforeMount(el, binding, vnode) {
+    console.log('beforeMount');
+  },
+  
+  // Called when parent component is mounted
+  mounted(el, binding, vnode) {
+    console.log('mounted');
+  },
+  
+  // Called before parent component is updated
+  beforeUpdate(el, binding, vnode, prevVnode) {
+    console.log('beforeUpdate');
+  },
+  
+  // Called after parent component is updated
+  updated(el, binding, vnode, prevVnode) {
+    console.log('updated');
+  },
+  
+  // Called before parent component is unmounted
+  beforeUnmount(el, binding, vnode) {
+    console.log('beforeUnmount');
+  },
+  
+  // Called when parent component is unmounted
+  unmounted(el, binding, vnode) {
+    console.log('unmounted');
+  }
+});
+```
+
+### Practical Examples
+
+**Click Outside Directive:**
+
+```js
+app.directive('click-outside', {
+  mounted(el, binding) {
+    el.clickOutsideEvent = function(event) {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value(event);
+      }
+    };
+    document.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el.clickOutsideEvent);
+  }
+});
+```
+
+**Usage:**
+
+```vue
+<template>
+  <div v-click-outside="closeMenu" class="dropdown">
+    <button @click="isOpen = !isOpen">Menu</button>
+    <ul v-if="isOpen">
+      <li>Item 1</li>
+      <li>Item 2</li>
+    </ul>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const isOpen = ref(false);
+
+function closeMenu() {
+  isOpen.value = false;
+}
+</script>
+```
+
+**Lazy Load Image Directive:**
+
+```js
+app.directive('lazy', {
+  mounted(el, binding) {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          el.src = binding.value;
+          observer.disconnect();
+        }
+      });
+    });
+    
+    observer.observe(el);
+  }
+});
+```
+
+**Usage:**
+
+```vue
+<template>
+  <img v-lazy="imageUrl" alt="Lazy loaded">
+</template>
+```
+
+---
+
+## 23. Teleport
+
+Teleport allows you to render content in a different part of the DOM.
+
+### Basic Teleport
+
+```vue
+<!-- Component.vue -->
+<template>
+  <div>
+    <h2>My Component</h2>
+    
+    <teleport to="body">
+      <div class="modal">
+        <p>This modal is rendered at the end of body</p>
+      </div>
+    </teleport>
+  </div>
+</template>
+
+<style>
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+</style>
+```
+
+### Modal Component with Teleport
+
+```vue
+<!-- Modal.vue -->
+<template>
+  <teleport to="body">
+    <div v-if="isOpen" class="modal-overlay" @click="close">
+      <div class="modal-content" @click.stop>
+        <button class="close-btn" @click="close">×</button>
+        <slot></slot>
+      </div>
+    </div>
+  </teleport>
+</template>
+
+<script setup>
+defineProps({
+  isOpen: Boolean
+});
+
+const emit = defineEmits(['close']);
+
+function close() {
+  emit('close');
+}
+</script>
+
+<style scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+</style>
+```
+
+**Using the Modal:**
+
+```vue
+<template>
+  <div>
+    <button @click="showModal = true">Open Modal</button>
+    
+    <Modal :is-open="showModal" @close="showModal = false">
+      <h2>Modal Title</h2>
+      <p>Modal content goes here</p>
+    </Modal>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import Modal from './components/Modal.vue';
+
+const showModal = ref(false);
+</script>
+```
+
+### Teleport to Different Targets
+
+```vue
+<template>
+  <!-- Teleport to body -->
+  <teleport to="body">
+    <div class="notification">Notification</div>
+  </teleport>
+  
+  <!-- Teleport to specific element -->
+  <teleport to="#modal-root">
+    <div class="modal">Modal</div>
+  </teleport>
+  
+  <!-- Conditional teleport -->
+  <teleport to="body" :disabled="!isMobile">
+    <div class="sidebar">Sidebar</div>
+  </teleport>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const isMobile = ref(window.innerWidth < 768);
+</script>
+```
+
+---
+
+## 24. Transitions & Animations
+
+Vue provides built-in transition components for animating elements.
+
+### Basic Transition
+
+```vue
+<template>
+  <button @click="show = !show">Toggle</button>
+  
+  <transition name="fade">
+    <p v-if="show">Hello Vue!</p>
+  </transition>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const show = ref(true);
+</script>
+
+<style>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
+```
+
+### Transition Classes
+
+Vue applies these classes automatically:
+
+```
+v-enter-from    → Element is inserted
+v-enter-active  → During enter transition
+v-enter-to      → Enter transition finished
+
+v-leave-from    → Leave starts
+v-leave-active  → During leave transition
+v-leave-to      → Leave finished
+```
+
+### Slide Transition
+
+```vue
+<template>
+  <button @click="show = !show">Toggle</button>
+  
+  <transition name="slide">
+    <div v-if="show" class="box">
+      Sliding content
+    </div>
+  </transition>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const show = ref(true);
+</script>
+
+<style>
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.box {
+  padding: 20px;
+  background: #42b983;
+  color: white;
+}
+</style>
+```
+
+### List Transitions
+
+```vue
+<template>
+  <button @click="addItem">Add Item</button>
+  
+  <transition-group name="list" tag="ul">
+    <li v-for="item in items" :key="item.id">
+      {{ item.text }}
+      <button @click="removeItem(item.id)">×</button>
+    </li>
+  </transition-group>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const items = ref([
+  { id: 1, text: 'Item 1' },
+  { id: 2, text: 'Item 2' }
+]);
+
+let nextId = 3;
+
+function addItem() {
+  items.value.push({
+    id: nextId++,
+    text: `Item ${nextId - 1}`
+  });
+}
+
+function removeItem(id) {
+  items.value = items.value.filter(item => item.id !== id);
+}
+</script>
+
+<style>
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.list-move {
+  transition: transform 0.5s;
+}
+</style>
+```
+
+### Using CSS Animation Libraries
+
+**With Animate.css:**
+
+```bash
+npm install animate.css
+```
+
+```vue
+<template>
+  <transition
+    enter-active-class="animate__animated animate__bounceIn"
+    leave-active-class="animate__animated animate__bounceOut"
+  >
+    <p v-if="show">Animated with Animate.css</p>
+  </transition>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import 'animate.css';
+
+const show = ref(true);
+</script>
+```
+
+### JavaScript Hooks
+
+```vue
+<template>
+  <transition
+    @before-enter="beforeEnter"
+    @enter="enter"
+    @after-enter="afterEnter"
+    @before-leave="beforeLeave"
+    @leave="leave"
+    @after-leave="afterLeave"
+  >
+    <div v-if="show">Element</div>
+  </transition>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const show = ref(true);
+
+function beforeEnter(el) {
+  el.style.opacity = 0;
+}
+
+function enter(el, done) {
+  el.offsetHeight; // Trigger reflow
+  el.style.transition = 'opacity 0.5s';
+  el.style.opacity = 1;
+  done();
+}
+
+function afterEnter(el) {
+  console.log('Enter complete');
+}
+
+function beforeLeave(el) {
+  el.style.opacity = 1;
+}
+
+function leave(el, done) {
+  el.style.transition = 'opacity 0.5s';
+  el.style.opacity = 0;
+  setTimeout(done, 500);
+}
+
+function afterLeave(el) {
+  console.log('Leave complete');
+}
+</script>
+```
+
+**Transition Documentation:** https://vuejs.org/guide/built-ins/transition.html
+
+---
+
+## 25. Best Practices
+
+### 1. Component Organization
+
+```
+src/
+├── components/
+│   ├── common/          # Reusable components
+│   │   ├── Button.vue
+│   │   └── Input.vue
+│   ├── layout/          # Layout components
+│   │   ├── Header.vue
+│   │   └── Footer.vue
+│   └── features/        # Feature-specific
+│       └── UserProfile.vue
+├── views/               # Page components
+├── composables/         # Reusable logic
+├── stores/              # Pinia stores
+├── router/              # Router config
+└── assets/              # Static files
+```
+
+### 2. Naming Conventions
+
+```vue
+<!-- PascalCase for component names -->
+<template>
+  <UserProfile />
+  <TodoList />
+</template>
+
+<!-- kebab-case for props and events -->
+<UserCard 
+  :user-name="name"
+  @update-profile="handleUpdate"
+/>
+```
+
+### 3. Use Composition API
+
+```vue
+<!-- ✅ Good -->
+<script setup>
+import { ref, computed } from 'vue';
+
+const count = ref(0);
+const double = computed(() => count.value * 2);
+</script>
+
+<!-- ❌ Avoid Options API for new projects -->
+<script>
+export default {
+  data() {
+    return { count: 0 };
+  }
+};
+</script>
+```
+
+### 4. Keep Components Small
+
+```vue
+<!-- ✅ Good: Small, focused component -->
+<template>
+  <button @click="handleClick">
+    {{ label }}
+  </button>
+</template>
+
+<script setup>
+defineProps(['label']);
+const emit = defineEmits(['click']);
+
+function handleClick() {
+  emit('click');
+}
+</script>
+
+<!-- ❌ Avoid: Too much logic in one component -->
+```
+
+### 5. Use Props Validation
+
+```vue
+<script setup>
+// ✅ Good: With validation
+defineProps({
+  title: {
+    type: String,
+    required: true
+  },
+  age: {
+    type: Number,
+    default: 0,
+    validator: (value) => value >= 0
+  }
+});
+
+// ❌ Avoid: No validation
+defineProps(['title', 'age']);
+</script>
+```
+
+### 6. Use Computed for Derived State
+
+```vue
+<script setup>
+import { ref, computed } from 'vue';
+
+const items = ref([1, 2, 3, 4, 5]);
+
+// ✅ Good: Use computed
+const evenItems = computed(() => {
+  return items.value.filter(item => item % 2 === 0);
+});
+
+// ❌ Avoid: Calculating in template
+// <div v-for="item in items.filter(i => i % 2 === 0)">
+</script>
+```
+
+### 7. Use Key with v-for
+
+```vue
+<!-- ✅ Good -->
+<li v-for="item in items" :key="item.id">
+  {{ item.name }}
+</li>
+
+<!-- ❌ Avoid: Using index as key -->
+<li v-for="(item, index) in items" :key="index">
+  {{ item.name }}
+</li>
+```
+
+### 8. Extract Reusable Logic to Composables
+
+```js
+// composables/useLocalStorage.js
+import { ref, watch } from 'vue';
+
+export function useLocalStorage(key, defaultValue) {
+  const value = ref(
+    JSON.parse(localStorage.getItem(key)) || defaultValue
+  );
+  
+  watch(value, (newValue) => {
+    localStorage.setItem(key, JSON.stringify(newValue));
+  }, { deep: true });
+  
+  return value;
+}
+```
+
+### 9. Use Async/Await for API Calls
+
+```vue
+<script setup>
+// ✅ Good
+async function fetchData() {
+  try {
+    const response = await axios.get('/api/data');
+    data.value = response.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// ❌ Avoid: Promise chains
+function fetchData() {
+  axios.get('/api/data')
+    .then(response => data.value = response.data)
+    .catch(error => console.error(error));
+}
+</script>
+```
+
+### 10. Error Handling
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const error = ref(null);
+const loading = ref(false);
+
+async function fetchData() {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    // API call
+  } catch (err) {
+    error.value = err.message;
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+
+<template>
+  <div v-if="loading">Loading...</div>
+  <div v-else-if="error">Error: {{ error }}</div>
+  <div v-else>{{ data }}</div>
+</template>
+```
+
+### 11. Use Environment Variables
+
+```js
+// .env
+VITE_API_URL=https://api.example.com
+VITE_APP_TITLE=My App
+
+// Use in code
+const apiUrl = import.meta.env.VITE_API_URL;
+```
+
+### 12. Lazy Load Routes
+
+```js
+// router/index.js
+const routes = [
+  {
+    path: '/about',
+    // ✅ Good: Lazy load
+    component: () => import('../views/About.vue')
+  },
+  {
+    path: '/home',
+    // ❌ Avoid: Import all at once
+    component: Home
+  }
+];
+```
+
+---
+
+## 26. Building for Production
+
+### Build Your App
+
+```bash
+npm run build
+```
+
+This creates a `dist/` folder with optimized files.
+
+### Build Output
+
+```
+dist/
+├── index.html
+├── assets/
+│   ├── index.[hash].js
+│   ├── index.[hash].css
+│   └── logo.[hash].png
+└── favicon.ico
+```
+
+### Environment Variables
+
+Create environment files:
+
+```bash
+# .env.production
+VITE_API_URL=https://api.production.com
+
+# .env.development
+VITE_API_URL=http://localhost:3000
+```
+
+### Optimization Tips
+
+**1. Code Splitting:**
+```js
+// Use dynamic imports
+const UserProfile = () => import('./components/UserProfile.vue');
+```
+
+**2. Tree Shaking:**
+```js
+// Import only what you need
+import { ref, computed } from 'vue';
+// Instead of: import * as Vue from 'vue';
+```
+
+**3. Compress Images:**
+- Use WebP format
+- Compress before deployment
+- Use lazy loading for images
+
+**4. Enable Gzip/Brotli:**
+Most hosting providers enable this automatically.
+
+### Deployment Options
+
+**Vercel:**
+```bash
+npm install -g vercel
+vercel
+```
+
+**Netlify:**
+```bash
+npm install -g netlify-cli
+netlify deploy --prod
+```
+
+**GitHub Pages:**
+```js
+// vite.config.js
+export default {
+  base: '/your-repo-name/'
+}
+```
+
+```bash
+npm run build
+git add dist -f
+git commit -m "Deploy"
+git subtree push --prefix dist origin gh-pages
+```
+
+**Cloudflare Pages:**
+1. Connect GitHub repo
+2. Set build command: `npm run build`
+3. Set output directory: `dist`
+
+**Docker:**
+```dockerfile
+FROM node:18-alpine as build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### Performance Checklist
+
+✅ Enable production mode  
+✅ Minify CSS and JavaScript  
+✅ Optimize images  
+✅ Use lazy loading  
+✅ Enable caching  
+✅ Use CDN for static assets  
+✅ Compress files (Gzip/Brotli)  
+✅ Remove console.logs  
+✅ Analyze bundle size
+
+### Analyze Bundle Size
+
+```bash
+npm run build -- --report
+```
+
+Or use:
+```bash
+npm install -D rollup-plugin-visualizer
+```
+
+```js
+// vite.config.js
+import { visualizer } from 'rollup-plugin-visualizer';
+
+export default {
+  plugins: [
+    visualizer({
+      open: true
+    })
+  ]
+}
+```
+
+---
+
+## 27. Useful Resources
+
+### Official Documentation
+- **Vue.js:** https://vuejs.org
+- **Vue Router:** https://router.vuejs.org
+- **Pinia:** https://pinia.vuejs.org
+- **Vite:** https://vitejs.dev
+- **Composition API:** https://vuejs.org/guide/extras/composition-api-faq.html
+
+### Tools & Libraries
+- **Axios:** https://axios-http.com
+- **VueUse:** https://vueuse.org (Collection of Vue composables)
+- **Vitest:** https://vitest.dev (Testing framework)
+- **Vue Devtools:** Browser extension for debugging
+
+### UI Component Libraries
+- **Vuetify:** https://vuetifyjs.com
+- **Element Plus:** https://element-plus.org
+- **Quasar:** https://quasar.dev
+- **PrimeVue:** https://primevue.org
+- **Ant Design Vue:** https://antdv.com
+- **Naive UI:** https://naiveui.com
+
+### CSS Frameworks
+- **Tailwind CSS:** https://tailwindcss.com
+- **Bootstrap Vue:** https://bootstrap-vue.org
+- **UnoCSS:** https://unocss.dev
+
+### Learning Resources
+- **Vue Mastery:** https://vuemastery.com
+- **Vue School:** https://vueschool.io
+- **Official Tutorial:** https://vuejs.org/tutorial/
+- **Awesome Vue:** https://github.com/vuejs/awesome-vue
+
+### Community
+- **Vue Forum:** https://forum.vuejs.org
+- **Discord:** https://discord.com/invite/vue
+- **Twitter:** @vuejs
+- **Reddit:** r/vuejs
+
+### VS Code Extensions
+- **Volar** - Vue Language Features
+- **Vue VSCode Snippets**
+- **ESLint**
+- **Prettier**
+
+### API Testing
+- **JSONPlaceholder:** https://jsonplaceholder.typicode.com (Fake REST API)
+- **ReqRes:** https://reqres.in (Test API)
+
+### Deployment Platforms
+- **Vercel:** https://vercel.com
+- **Netlify:** https://netlify.com
+- **Cloudflare Pages:** https://pages.cloudflare.com
+- **GitHub Pages:** https://pages.github.com
+- **Railway:** https://railway.app
+- **Render:** https://render.com
+
+---
+
+## Quick Reference Card
+
+### Creating Reactive Data
+```js
+import { ref, reactive } from 'vue';
+
+const count = ref(0);                    // Primitive
+const user = reactive({ name: 'John' }); // Object
+```
+
+### Computed & Watch
+```js
+import { computed, watch } from 'vue';
+
+const double = computed(() => count.value * 2);
+watch(count, (newVal) => console.log(newVal));
+```
+
+### Directives
+```html
+<p v-if="show">Conditional</p>
+<p v-show="visible">Toggle visibility</p>
+<li v-for="item in items" :key="item.id">{{ item }}</li>
+<input v-model="text">
+<button @click="handleClick">Click</button>
+<img :src="imageUrl">
+```
+
+### Component Communication
+```js
+// Props
+defineProps({ title: String });
+
+// Emits
+const emit = defineEmits(['update']);
+emit('update', value);
+```
+
+### Lifecycle Hooks
+```js
+import { onMounted, onUnmounted } from 'vue';
+
+onMounted(() => console.log('Mounted'));
+onUnmounted(() => console.log('Cleanup'));
+```
+
+### Router
+```js
+import { useRouter, useRoute } from 'vue-router';
+
+const router = useRouter();
+const route = useRoute();
+
+router.push('/path');
+const id = route.params.id;
+```
+
+### Store (Pinia)
+```js
+import { defineStore } from 'pinia';
+
+export const useStore = defineStore('main', () => {
+  const count = ref(0);
+  function increment() { count.value++; }
+  return { count, increment };
+});
+```
+
+---
+
+## Congratulations! 🎉
+
+You've completed the Vue.js beginner's guide! You now have a solid foundation in:
+
+✅ Vue fundamentals  
+✅ Components and composition  
+✅ State management  
+✅ Routing  
+✅ API integration  
+✅ Best practices  
+
+### Next Steps:
+1. Build a small project (Todo App, Weather App, etc.)
+2. Explore advanced topics (SSR, Nuxt.js)
+3. Join the Vue community
+4. Contribute to open-source Vue projects
+5. Keep practicing and building!
+
+**Happy Coding with Vue! 💚**
+
+---
+
+*Document Version: 1.0*  
+*Last Updated: December 2024*  
+*Vue Version: 3.x*
