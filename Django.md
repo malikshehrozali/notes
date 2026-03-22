@@ -1,6 +1,7 @@
 # Django Complete Notes
 
 ## Table of Contents
+
 1. [Introduction to Django](#introduction-to-django)
 2. [Installation and Setup](#installation-and-setup)
 3. [Project Structure](#project-structure)
@@ -29,6 +30,7 @@
 Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design. It follows the "batteries-included" philosophy, providing most things developers need out of the box.
 
 ### Key Features
+
 - **Fast Development**: Built-in features reduce development time
 - **Secure**: Helps avoid common security mistakes
 - **Scalable**: Can handle heavy traffic
@@ -38,6 +40,7 @@ Django is a high-level Python web framework that encourages rapid development an
 - **URL Routing**: Clean and elegant URL design
 
 ### Philosophy
+
 - **DRY (Don't Repeat Yourself)**: Reduce code duplication
 - **Explicit is better than implicit**: Clear and readable code
 - **Loose coupling**: Components should be independent
@@ -117,12 +120,14 @@ python manage.py runserver 0.0.0.0:8000
 ### Main Project Files
 
 **manage.py**: Command-line utility for administrative tasks
+
 - Run development server
 - Create migrations
 - Run tests
 - Create superuser
 
 **settings.py**: Configuration for Django project
+
 - Database settings
 - Installed apps
 - Middleware
@@ -153,23 +158,27 @@ python manage.py runserver 0.0.0.0:8000
 Django follows the MTV (Model-Template-View) pattern, similar to MVC:
 
 ### Model
+
 - Represents data structure
 - Handles database operations
 - Defines relationships between data
 - Contains business logic
 
 ### Template
+
 - Handles presentation logic
 - HTML files with Django template language
 - Renders data to the user
 
 ### View
+
 - Handles user requests
 - Contains application logic
 - Fetches data from models
 - Passes data to templates
 
 ### Flow:
+
 ```
 User Request → URLs → View → Model (if needed) → Template → Response
 ```
@@ -192,10 +201,10 @@ class Article(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     author = models.ForeignKey('auth.User', on_delete=models.CASCADE)
     is_published = models.BooleanField(default=False)
-    
+
     def __str__(self):
         return self.title
-    
+
     class Meta:
         ordering = ['-published_date']
         verbose_name_plural = "Articles"
@@ -204,6 +213,7 @@ class Article(models.Model):
 ### Field Types
 
 **Text Fields:**
+
 - `CharField(max_length)`: Short text
 - `TextField()`: Long text
 - `EmailField()`: Email validation
@@ -211,26 +221,31 @@ class Article(models.Model):
 - `SlugField()`: URL-friendly text
 
 **Numeric Fields:**
+
 - `IntegerField()`: Integer numbers
 - `FloatField()`: Floating point numbers
 - `DecimalField(max_digits, decimal_places)`: Precise decimals
 - `PositiveIntegerField()`: Positive integers only
 
 **Date/Time Fields:**
+
 - `DateField()`: Date
 - `TimeField()`: Time
 - `DateTimeField()`: Date and time
 - `DurationField()`: Time duration
 
 **Boolean:**
+
 - `BooleanField()`: True/False
 
 **Relationships:**
+
 - `ForeignKey()`: Many-to-one
 - `ManyToManyField()`: Many-to-many
 - `OneToOneField()`: One-to-one
 
 **Files:**
+
 - `FileField()`: File upload
 - `ImageField()`: Image upload
 - `FilePathField()`: File path selection
@@ -291,17 +306,17 @@ class Product(models.Model):
     name = models.CharField(max_length=200)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     discount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    
+
     def __str__(self):
         return self.name
-    
+
     def get_absolute_url(self):
         from django.urls import reverse
         return reverse('product-detail', args=[str(self.id)])
-    
+
     def get_discounted_price(self):
         return self.price - (self.price * self.discount / 100)
-    
+
     class Meta:
         ordering = ['name']
         verbose_name = 'Product'
@@ -353,6 +368,11 @@ def article_list(request):
 # Detail view
 def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk)
+    return render(request, 'articles/detail.html', {'article': article})
+
+# get details from the url
+def article_details(request, **kwargs):
+    article = get_object_or_404(kwargs['pk'])
     return render(request, 'articles/detail.html', {'article': article})
 
 # Handle POST request
@@ -530,7 +550,7 @@ Templates handle the presentation layer using Django Template Language (DTL).
 </head>
 <body>
     {% include "navbar.html" %}
-    
+
     <main>
         {% if messages %}
             {% for message in messages %}
@@ -539,13 +559,13 @@ Templates handle the presentation layer using Django Template Language (DTL).
                 </div>
             {% endfor %}
         {% endif %}
-        
+
         {% block content %}
         {% endblock %}
     </main>
-    
+
     {% include "footer.html" %}
-    
+
     <script src="{% static 'js/main.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
@@ -674,16 +694,16 @@ app_name = 'myapp'
 urlpatterns = [
     # Simple path
     path('', views.home, name='home'),
-    
+
     # Path with parameter
     path('article/<int:pk>/', views.article_detail, name='article-detail'),
-    
+
     # Path with slug
     path('article/<slug:slug>/', views.article_by_slug, name='article-slug'),
-    
+
     # Multiple parameters
     path('category/<str:category>/article/<int:pk>/', views.category_article, name='category-article'),
-    
+
     # Class-based view
     path('articles/', views.ArticleListView.as_view(), name='article-list'),
 ]
@@ -706,10 +726,10 @@ path('file/<path:filepath>/')    # path: matches any string including slashes
 # myapp/converters.py
 class YearConverter:
     regex = '[0-9]{4}'
-    
+
     def to_python(self, value):
         return int(value)
-    
+
     def to_url(self, value):
         return str(value)
 
@@ -773,7 +793,7 @@ class ContactForm(forms.Form):
     email = forms.EmailField()
     subject = forms.CharField(max_length=200)
     message = forms.CharField(widget=forms.Textarea)
-    
+
     def clean_name(self):
         name = self.cleaned_data['name']
         if len(name) < 3:
@@ -793,20 +813,20 @@ class ArticleForm(forms.ModelForm):
         fields = ['title', 'content', 'is_published']
         # or exclude = ['author']
         # or fields = '__all__'
-        
+
         widgets = {
             'content': forms.Textarea(attrs={'rows': 10}),
             'title': forms.TextInput(attrs={'class': 'form-control'}),
         }
-        
+
         labels = {
             'is_published': 'Publish this article?',
         }
-        
+
         help_texts = {
             'title': 'Enter a catchy title',
         }
-    
+
     def clean_title(self):
         title = self.cleaned_data['title']
         if 'bad_word' in title.lower():
@@ -830,12 +850,12 @@ def create_article(request):
             return redirect('article-detail', pk=article.pk)
     else:
         form = ArticleForm()
-    
+
     return render(request, 'articles/create.html', {'form': form})
 
 def edit_article(request, pk):
     article = get_object_or_404(Article, pk=pk)
-    
+
     if request.method == 'POST':
         form = ArticleForm(request.POST, instance=article)
         if form.is_valid():
@@ -843,7 +863,7 @@ def edit_article(request, pk):
             return redirect('article-detail', pk=article.pk)
     else:
         form = ArticleForm(instance=article)
-    
+
     return render(request, 'articles/edit.html', {'form': form, 'article': article})
 ```
 
@@ -860,21 +880,21 @@ def edit_article(request, pk):
 {# Render manually #}
 <form method="post">
     {% csrf_token %}
-    
+
     {{ form.non_field_errors }}
-    
+
     <div class="form-group">
         {{ form.title.label_tag }}
         {{ form.title }}
         {{ form.title.errors }}
     </div>
-    
+
     <div class="form-group">
         {{ form.content.label_tag }}
         {{ form.content }}
         {{ form.content.errors }}
     </div>
-    
+
     <button type="submit">Submit</button>
 </form>
 
@@ -902,23 +922,23 @@ class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
         fields = '__all__'
-    
+
     # Field-level validation
     def clean_title(self):
         title = self.cleaned_data['title']
         if Article.objects.filter(title=title).exists():
             raise forms.ValidationError("This title already exists")
         return title
-    
+
     # Form-level validation
     def clean(self):
         cleaned_data = super().clean()
         title = cleaned_data.get('title')
         content = cleaned_data.get('content')
-        
+
         if title and content and title in content:
             raise forms.ValidationError("Title should not appear in content")
-        
+
         return cleaned_data
 ```
 
@@ -931,33 +951,33 @@ class MyForm(forms.Form):
     # Text inputs
     name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
     password = forms.CharField(widget=forms.PasswordInput())
-    
+
     # Textarea
     message = forms.CharField(widget=forms.Textarea(attrs={'rows': 5}))
-    
+
     # Checkboxes and radios
     agree = forms.BooleanField(widget=forms.CheckboxInput())
     choice = forms.ChoiceField(
         choices=[('1', 'Option 1'), ('2', 'Option 2')],
         widget=forms.RadioSelect()
     )
-    
+
     # Select dropdown
     category = forms.ChoiceField(
         choices=[('tech', 'Technology'), ('health', 'Health')],
         widget=forms.Select()
     )
-    
+
     # Multiple select
     tags = forms.MultipleChoiceField(
         choices=[('python', 'Python'), ('django', 'Django')],
         widget=forms.CheckboxSelectMultiple()
     )
-    
+
     # Date/time
     date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
     time = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}))
-    
+
     # File upload
     file = forms.FileField()
     image = forms.ImageField()
@@ -980,7 +1000,7 @@ def manage_articles(request):
                 pass
     else:
         formset = ArticleFormSet()
-    
+
     return render(request, 'articles/formset.html', {'formset': formset})
 
 # Model formset
@@ -993,7 +1013,7 @@ def edit_articles(request):
             formset.save()
     else:
         formset = ArticleFormSet(queryset=Article.objects.all())
-    
+
     return render(request, 'articles/edit_formset.html', {'formset': formset})
 ```
 
@@ -1034,11 +1054,11 @@ class ArticleAdmin(admin.ModelAdmin):
     search_fields = ['title', 'content']
     list_per_page = 25
     list_editable = ['is_published']
-    
+
     # Form page
     fields = ['title', 'content', 'author', 'is_published']
     readonly_fields = ['published_date']
-    
+
     # Fieldsets for organizing fields
     fieldsets = (
         ('Basic Information', {
@@ -1049,20 +1069,20 @@ class ArticleAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
     # Prepopulate fields
     prepopulated_fields = {'slug': ('title',)}
-    
+
     # Filters
     date_hierarchy = 'published_date'
-    
+
     # Actions
     actions = ['make_published', 'make_draft']
-    
+
     def make_published(self, request, queryset):
         queryset.update(is_published=True)
     make_published.short_description = "Mark selected as published"
-    
+
     def make_draft(self, request, queryset):
         queryset.update(is_published=False)
     make_draft.short_description = "Mark selected as draft"
@@ -1095,21 +1115,21 @@ import csv
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
     actions = ['export_as_csv']
-    
+
     def export_as_csv(self, request, queryset):
         meta = self.model._meta
         field_names = [field.name for field in meta.fields]
-        
+
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename={}.csv'.format(meta)
         writer = csv.writer(response)
-        
+
         writer.writerow(field_names)
         for obj in queryset:
             writer.writerow([getattr(obj, field) for field in field_names])
-        
+
         return response
-    
+
     export_as_csv.short_description = "Export Selected as CSV"
 ```
 
@@ -1160,13 +1180,13 @@ def login_view(request):
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
-        
+
         if user is not None:
             login(request, user)
             return redirect('home')
         else:
             return render(request, 'login.html', {'error': 'Invalid credentials'})
-    
+
     return render(request, 'login.html')
 
 def logout_view(request):
@@ -1215,7 +1235,7 @@ from django.contrib.auth.models import AbstractUser
 class CustomUser(AbstractUser):
     bio = models.TextField(blank=True)
     birth_date = models.DateField(null=True, blank=True)
-    
+
     def __str__(self):
         return self.username
 
@@ -1238,7 +1258,7 @@ def register(request):
             return redirect('home')
     else:
         form = UserCreationForm()
-    
+
     return render(request, 'register.html', {'form': form})
 ```
 
@@ -1295,34 +1315,34 @@ MIDDLEWARE = [
 # Function-based middleware
 def simple_middleware(get_response):
     # One-time configuration and initialization
-    
+
     def middleware(request):
         # Code executed before the view
-        
+
         response = get_response(request)
-        
+
         # Code executed after the view
-        
+
         return response
-    
+
     return middleware
 
 # Class-based middleware
 class CustomMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-    
+
     def __call__(self, request):
         # Before view
         request.custom_attribute = 'value'
-        
+
         response = self.get_response(request)
-        
+
         # After view
         response['X-Custom-Header'] = 'Value'
-        
+
         return response
-    
+
     def process_exception(self, request, exception):
         # Handle exceptions
         return None
@@ -1341,12 +1361,12 @@ MIDDLEWARE = [
 class RequestLogMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-    
+
     def __call__(self, request):
         import logging
         logger = logging.getLogger('django.request')
         logger.info(f'{request.method} {request.path}')
-        
+
         response = self.get_response(request)
         return response
 
@@ -1356,15 +1376,15 @@ import time
 class TimingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-    
+
     def __call__(self, request):
         start_time = time.time()
-        
+
         response = self.get_response(request)
-        
+
         duration = time.time() - start_time
         response['X-Page-Generation-Duration-Ms'] = int(duration * 1000)
-        
+
         return response
 ```
 
@@ -1433,7 +1453,7 @@ def upload_file(request):
         profile = Profile.objects.get(user=request.user)
         profile.avatar = uploaded_file
         profile.save()
-    
+
     return render(request, 'upload.html')
 
 # template
@@ -1678,7 +1698,7 @@ from .models import Article
 # Template view
 class HomeView(TemplateView):
     template_name = 'home.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['latest_articles'] = Article.objects.order_by('-published_date')[:5]
@@ -1690,7 +1710,7 @@ class ArticleListView(ListView):
     template_name = 'articles/list.html'
     context_object_name = 'articles'
     paginate_by = 10
-    
+
     def get_queryset(self):
         return Article.objects.filter(is_published=True).order_by('-published_date')
 
@@ -1706,7 +1726,7 @@ class ArticleCreateView(CreateView):
     template_name = 'articles/create.html'
     fields = ['title', 'content', 'is_published']
     success_url = reverse_lazy('article-list')
-    
+
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
@@ -1716,7 +1736,7 @@ class ArticleUpdateView(UpdateView):
     model = Article
     template_name = 'articles/update.html'
     fields = ['title', 'content', 'is_published']
-    
+
     def get_success_url(self):
         return reverse_lazy('article-detail', kwargs={'pk': self.object.pk})
 
@@ -1805,12 +1825,12 @@ from .models import Article
 
 class ArticleSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
-    
+
     class Meta:
         model = Article
         fields = ['id', 'title', 'content', 'author', 'author_name', 'published_date']
         read_only_fields = ['author', 'published_date']
-    
+
     def validate_title(self, value):
         if len(value) < 5:
             raise serializers.ValidationError("Title must be at least 5 characters")
@@ -1833,17 +1853,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         queryset = Article.objects.all()
         is_published = self.request.query_params.get('is_published')
         if is_published is not None:
             queryset = queryset.filter(is_published=is_published)
         return queryset
-    
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-    
+
     @action(detail=True, methods=['post'])
     def publish(self, request, pk=None):
         article = self.get_object()
@@ -1858,7 +1878,7 @@ def article_list(request):
         articles = Article.objects.all()
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data)
-    
+
     elif request.method == 'POST':
         serializer = ArticleSerializer(data=request.data)
         if serializer.is_valid():
@@ -1894,7 +1914,7 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
         # Read permissions for any request
         if request.method in permissions.SAFE_METHODS:
             return True
-        
+
         # Write permissions only for author
         return obj.author == request.user
 
@@ -2059,16 +2079,16 @@ class ArticleModelTest(TestCase):
             content='Test content',
             author=self.user
         )
-    
+
     def test_article_creation(self):
         self.assertTrue(isinstance(self.article, Article))
         self.assertEqual(self.article.__str__(), self.article.title)
-    
+
     def test_article_list_view(self):
         response = self.client.get(reverse('article-list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Test Article')
-    
+
     def test_article_detail_view(self):
         response = self.client.get(reverse('article-detail', args=[self.article.pk]))
         self.assertEqual(response.status_code, 200)
@@ -2078,11 +2098,11 @@ class ArticleViewTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.user = User.objects.create_user('testuser', 'test@example.com', 'password')
-    
+
     def test_create_article_requires_login(self):
         response = self.client.get(reverse('article-create'))
         self.assertEqual(response.status_code, 302)  # Redirect to login
-    
+
     def test_create_article_authenticated(self):
         self.client.login(username='testuser', password='password')
         response = self.client.post(reverse('article-create'), {
@@ -2154,7 +2174,7 @@ python manage.py dumpdata myapp --indent=2 > myapp/fixtures/initial_data.json
 # Load fixture in tests
 class MyTest(TestCase):
     fixtures = ['initial_data.json']
-    
+
     def test_something(self):
         # Data from fixture is available
         pass
@@ -2231,15 +2251,15 @@ gunicorn myproject.wsgi:application --bind 0.0.0.0:8000
 server {
     listen 80;
     server_name yourdomain.com;
-    
+
     location /static/ {
         alias /var/www/yourdomain.com/static/;
     }
-    
+
     location /media/ {
         alias /var/www/yourdomain.com/media/;
     }
-    
+
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
@@ -2353,11 +2373,13 @@ myproject/
 ## Additional Resources
 
 ### Documentation
+
 - Official Django Documentation: https://docs.djangoproject.com/
 - Django REST Framework: https://www.django-rest-framework.org/
 - Django Packages: https://djangopackages.org/
 
 ### Common Django Packages
+
 - **django-debug-toolbar**: Development debugging
 - **django-extensions**: Additional management commands
 - **django-crispy-forms**: Better form rendering
@@ -2372,7 +2394,7 @@ myproject/
 ```bash
 # Create superuser
 python manage.py createsuperuser
-
+v
 # Shell
 python manage.py shell
 
